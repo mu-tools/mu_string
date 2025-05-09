@@ -14,8 +14,9 @@
 
 # Compile and run unit tests
 SRC_DIR := ../src
+INC_DIR := ../inc
 TEST_DIR := ../test
-TEST_SUPPORT_DIR := ../../test_support
+TEST_SUPPORT_DIR := ../test
 OBJ_DIR := $(TEST_DIR)/obj
 BIN_DIR := $(TEST_DIR)/bin
 COVERAGE_DIR := $(TEST_DIR)/coverage
@@ -39,7 +40,7 @@ LFLAGS := $(GCOVFLAGS)
 TEST_SUPPORT_FILES := \
 	$(TEST_SUPPORT_DIR)/unity.c
 
-SRC_OBJS := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC_FILES) $(CORE_FILES))
+SRC_OBJS := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC_FILES))
 TEST_OBJS := $(patsubst $(TEST_DIR)/%.c, $(OBJ_DIR)/%.o, $(TEST_FILES))
 TEST_SUPPORT_OBJS := $(patsubst $(TEST_SUPPORT_DIR)/%.c, $(OBJ_DIR)/%.o, $(TEST_SUPPORT_FILES))
 EXECUTABLES := $(patsubst $(TEST_DIR)/%.c, $(BIN_DIR)/%, $(TEST_FILES))
@@ -86,17 +87,17 @@ clean:
 # Compile and generate dependencies for source files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	mkdir -p $(@D)
-	$(CC) $(CFLAGS) -I$(SRC_DIR) $(DEPFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -I$(INC_DIR) $(DEPFLAGS) -c $< -o $@
 
 # Compile and generate dependencies for test files
 $(OBJ_DIR)/%.o: $(TEST_DIR)/%.c
 	mkdir -p $(@D)
-	$(CC) $(CFLAGS) -I$(SRC_DIR) -I$(TEST_SUPPORT_DIR) $(DEPFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -I$(INC_DIR) -I$(TEST_SUPPORT_DIR) $(DEPFLAGS) -c $< -o $@
 
 # Compile and generate dependencies for test support files
 $(OBJ_DIR)/%.o: $(TEST_SUPPORT_DIR)/%.c
 	mkdir -p $(@D)
-	$(CC) $(CFLAGS) -I$(SRC_DIR) $(DEPFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -I$(INC_DIR) $(DEPFLAGS) -c $< -o $@
 
 -include $(OBJ_DIR)/*.d
 
