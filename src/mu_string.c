@@ -32,10 +32,10 @@
 // Includes
 
 #include "mu_string.h"
-#include <string.h> // For strlen, memcpy, memcmp
-#include <limits.h> // For INT_MAX, SIZE_MAX
-#include <stdbool.h> // For bool
-#include <stddef.h> // For size_t
+#include <string.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifndef INT_MAX
 #error INT_MAX is not defined

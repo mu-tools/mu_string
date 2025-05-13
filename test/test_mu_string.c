@@ -42,12 +42,6 @@
 // Helper for creating a mu_string_t literal for expected values in tests
 #define MU_STR_LITERAL(s) (mu_string_t){ .buf = (s), .len = strlen(s) }
 
-// Custom assertion macros removed, using standard Unity assertions directly.
-
-// Special sentinel value for indicating an invalid string result or input state.
-#define MU_STRING_INVALID (mu_string_t){ .buf = NULL, .len = SIZE_MAX }
-
-
 // Helper predicate for testing trim and split functions
 bool is_whitespace_pred(char ch, void *arg) {
     (void)arg; // arg is unused
