@@ -57,17 +57,21 @@
 // Private (forward) declarations
 
 /**
- * @brief Helper to handle split results based on the found index.
+ * @brief Helper for splitting a string slice at a given index.
  *
- * Encapsulates the common logic for returning the 'before' part and setting
- * the 'after' part based on whether a split point was found.
+ * If `found_idx < s.len`, returns the "before" slice [0..found_idx)
+ * and sets `*after` to the remainder starting at `found_idx`, length
+ * `s.len - found_idx`.  If `found_idx == s.len`, returns the entire
+ * input `s` and sets `*after` to the empty slice at the end of `s`.
  *
- * @param s The original string view.
- * @param after Optional pointer to the 'after' result.
- * @param found_idx The index where the split should occur (s.len if not found).
- * @return The 'before' part of the split, or MU_STRING_NOT_FOUND if found_idx == s.len.
+ * @param s          The original string slice. Must be valid.
+ * @param after      Optional out‐parameter to receive the remainder; may be NULL.
+ * @param found_idx  Index at which to split (0..s.len).
+ * @return           The "before" slice.
  */
-static mu_string_t mu_string_split_handle_result(mu_string_t s, mu_string_t* after, size_t found_idx);
+static mu_string_t mu_string_split_handle_result(mu_string_t s,
+                                                 mu_string_t *after,
+                                                 size_t found_idx);
 
 // *****************************************************************************
 // Public code
@@ -119,7 +123,7 @@ bool mu_string_is_empty(mu_string_t s) {
 }
 
 
-const char* mu_string_get_buf(mu_string_t s) {
+const char* mu_string_buf(mu_string_t s) {
     // Header says NULL if empty or invalid.
     if (!mu_string_is_valid(s) || s.len == 0) {
         // For MU_STRING_EMPTY ({ "", 0 }), buf is not NULL, but returning NULL is consistent
@@ -129,16 +133,11 @@ const char* mu_string_get_buf(mu_string_t s) {
     return s.buf;
 }
 
-size_t mu_string_get_len(mu_string_t s) {
-    return mu_string_len(s); // Alias
-}
-
-
-char* mu_string_mut_get_buf(mu_string_mut_t s_mut) {
+char* mu_string_mut_buf(mu_string_mut_t s_mut) {
     return s_mut.buf;
 }
 
-size_t mu_string_mut_get_len(mu_string_mut_t s_mut) {
+size_t mu_string_mut_len(mu_string_mut_t s_mut) {
     return s_mut.len;
 }
 
@@ -445,12 +444,16 @@ mu_string_t mu_string_split_at_char(mu_string_t s, mu_string_t* after, char deli
             // After part is MU_STRING_NOT_FOUND if delimiter is not found
             *after = MU_STRING_NOT_FOUND;
         }
-        return MU_STRING_NOT_FOUND; // Return not found sentinel
+        return s; // Return entire string when not found
     }
 }
 
-mu_string_t mu_string_split_by_pred(mu_string_t s, mu_string_t* after, mu_string_pred_t pred, void* arg) {
-    // Handle invalid input (s invalid or pred NULL)
+mu_string_t mu_string_split_by_pred(mu_string_t s,
+                                    mu_string_t *after,
+                                    mu_string_pred_t pred,
+                                    void *arg)
+{
+    // Invalid input?
     if (!mu_string_is_valid(s) || pred == NULL) {
         if (after) {
             *after = MU_STRING_INVALID;
@@ -458,17 +461,28 @@ mu_string_t mu_string_split_by_pred(mu_string_t s, mu_string_t* after, mu_string
         return MU_STRING_INVALID;
     }
 
-    // Find the first index where predicate is true
-    size_t found_idx = s.len; // Initialize to s.len (not found)
+    // Find index of first character satisfying the predicate
+    size_t split_idx = s.len;
     for (size_t i = 0; i < s.len; ++i) {
         if (pred(s.buf[i], arg)) {
-            found_idx = i;
+            split_idx = i;
             break;
         }
     }
 
-    // Handle the result based on whether the index was found
-    return mu_string_split_handle_result(s, after, found_idx);
+    // If no match, return whole input and make `after` the empty slice
+    if (split_idx == s.len) {
+        if (after) {
+            // Remainder starts at end of s, length zero
+            after->buf = s.buf + s.len;
+            after->len = 0;
+        }
+        return s;
+    }
+
+    // Otherwise delegate to the existing split handler
+    mu_string_t xxx = mu_string_split_handle_result(s, after, split_idx);
+    return xxx;
 }
 
 mu_string_t mu_string_split_by_not_pred(mu_string_t s, mu_string_t* after, mu_string_pred_t pred, void* arg) {
@@ -542,22 +556,25 @@ mu_string_mut_t mu_string_append(mu_string_mut_t dst_segment, mu_string_t src) {
 // *****************************************************************************
 // Private (static) code
 
-static mu_string_t mu_string_split_handle_result(mu_string_t s, mu_string_t* after, size_t found_idx) {
-    // If index was found (i.e., loop did not complete)
-    if (found_idx != s.len) {
-        mu_string_t before_part = { .buf = &s.buf[0], .len = found_idx };
+static mu_string_t mu_string_split_handle_result(mu_string_t s,
+                                                 mu_string_t *after,
+                                                 size_t found_idx)
+{
+    if (found_idx < s.len) {
+        // Split point found within s
+        mu_string_t before = { .buf = s.buf, .len = found_idx };
         if (after) {
-            // After part starts AT the found index and goes to the end
-            *after = (mu_string_t){ .buf = &s.buf[found_idx], .len = s.len - found_idx };
+            after->buf = s.buf + found_idx;
+            after->len = s.len - found_idx;
         }
-        return before_part;
-    } else {
-        // If index was NOT found (loop completed)
-        if (after) {
-            *after = MU_STRING_NOT_FOUND;
-        }
-        return MU_STRING_NOT_FOUND;
+        return before;
     }
+    // No split point: return whole s, and set after to empty slice
+    if (after) {
+        after->buf = s.buf + s.len;
+        after->len = 0;
+    }
+    return s;
 }
 
 // *****************************************************************************

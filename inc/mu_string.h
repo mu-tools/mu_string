@@ -1,4 +1,4 @@
-/**
+    /**
  * MIT License
  *
  * Copyright (c) 2025 R. D. Poor & Assoc <rdpoor @ gmail.com>
@@ -222,15 +222,7 @@ bool mu_string_is_empty(mu_string_t s);
  * @param s The string view.
  * @return The buffer pointer, or NULL if the string is empty or invalid.
  */
-const char *mu_string_get_buf(mu_string_t s);
-
-/**
- * @brief Gets the length of a string view (alias for mu_string_len).
- *
- * @param s The string view.
- * @return The length of the string, or SIZE_MAX if the string view is invalid.
- */
-size_t mu_string_get_len(mu_string_t s);
+const char *mu_string_buf(mu_string_t s);
 
 /**
  * @brief Gets the buffer pointer of a mutable string view.
@@ -238,7 +230,7 @@ size_t mu_string_get_len(mu_string_t s);
  * @param s_mut The mutable string view.
  * @return The buffer pointer. Returns NULL if the view has a NULL buffer.
  */
-char *mu_string_mut_get_buf(mu_string_mut_t s_mut);
+char *mu_string_mut_buf(mu_string_mut_t s_mut);
 
 /**
  * @brief Gets the capacity (length) of a mutable string view.
@@ -246,7 +238,7 @@ char *mu_string_mut_get_buf(mu_string_mut_t s_mut);
  * @param s_mut The mutable string view.
  * @return The capacity of the view.
  */
-size_t mu_string_mut_get_len(mu_string_mut_t s_mut);
+size_t mu_string_mut_len(mu_string_mut_t s_mut);
 
 /**
  * @brief Checks if two string views are equal (same length and content).
@@ -485,40 +477,23 @@ mu_string_t mu_string_split_at_char(mu_string_t s, mu_string_t *after,
                                     char delimiter);
 
 /**
- * @brief Splits a string view into two parts at the first character matching a
- * predicate.
+ * @brief Splits a string at the first character satisfying `pred`.
  *
- * Finds the first character in `s` that matches the `pred` predicate.
+ * Returns the slice of `s` up to (but not including) the first character
+ * for which `pred(ch, arg)` is true.  Updates `*after` to the remainder
+ * of the string after that character.  If no character satisfies `pred`,
+ * returns the entire input as the token and sets `*after` to the empty slice.
  *
- * - If `s` is `MU_STRING_INVALID` or `pred` is NULL, the function returns
- * `MU_STRING_INVALID`. If `after` is non-NULL, `*after` is also set to
- * `MU_STRING_INVALID`.
- * - If the predicate matches a character in `s` at index `idx`, the function
- * returns a `mu_string_t` view representing the part of `s` *before* the
- * matching character (`{s.buf, idx}`). If `after` is non-NULL, `*after` is
- * set to a `mu_string_t` view of the part of `s` starting *at* the matching
- * character and going to the end of `s` (including the matching character).
- * - If the predicate never matches any character in `s` (and `s` is valid
- * and `pred` is non-NULL), the function returns `MU_STRING_NOT_FOUND`. If
- * `after` is non-NULL, `*after` is also set to `MU_STRING_NOT_FOUND`.
- *
- * Note: If the `after` pointer is NULL, the 'after' part is not returned
- * or modified. An empty string (`MU_STRING_EMPTY`) is a valid string view.
- *
- * @param s The string view to split. Must be a valid `mu_string_t`.
- * @param after Optional pointer to a `mu_string_t` to store the part from
- * the matching character onwards (if found), or `MU_STRING_NOT_FOUND`
- * (if not found), or `MU_STRING_INVALID` (if s is invalid or pred is NULL).
- * Can be NULL.
- * @param pred The predicate function to split by. Must be non-NULL for valid
- * search.
- * @param arg An optional argument passed to the predicate function.
- * @return A `mu_string_t` view representing the part of `s` before the
- * matching character (if found), or `MU_STRING_NOT_FOUND` (if not found),
- * or `MU_STRING_INVALID` (if s is invalid or pred is NULL).
+ * @param s      Input string slice. Must be valid.
+ * @param after  Optional out‐parameter to receive the remainder; may be NULL.
+ * @param pred   Predicate function to identify the split point. Must not be NULL.
+ * @param arg    Optional argument passed through to `pred`.
+ * @return       Slice before the first matching character, or entire `s` if no match.
  */
-mu_string_t mu_string_split_by_pred(mu_string_t s, mu_string_t *after,
-                                    mu_string_pred_t pred, void *arg);
+mu_string_t mu_string_split_by_pred(mu_string_t s,
+                                    mu_string_t *after,
+                                    mu_string_pred_t pred,
+                                    void *arg);
 
 /**
  * @brief Splits a string view into two parts at the first character that does

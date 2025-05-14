@@ -161,21 +161,21 @@ void test_mu_string_is_empty(void) {
     TEST_ASSERT_FALSE(mu_string_is_empty(MU_STRING_INVALID)); // Invalid is not considered empty
 }
 
-void test_mu_string_get_buf_len(void) {
+void test_mu_string_buf_len(void) {
     mu_string_t s = MU_STR_LITERAL("test");
     TEST_ASSERT_EQUAL_PTR(s.buf, "test"); // Use s.buf explicitly if checking content ptr
-    TEST_ASSERT_EQUAL_size_t(4, mu_string_get_len(s));
+    TEST_ASSERT_EQUAL_size_t(4, mu_string_len(s));
 
     mu_string_t empty_s = MU_STRING_EMPTY;
     TEST_ASSERT_EQUAL_PTR(empty_s.buf, ""); // Use empty_s.buf explicitly
-    TEST_ASSERT_EQUAL_size_t(0, mu_string_get_len(empty_s));
+    TEST_ASSERT_EQUAL_size_t(0, mu_string_len(empty_s));
 
     mu_string_mut_t mut_s = mu_string_mut_from_buf(mutable_buffer, 20);
     TEST_ASSERT_EQUAL_PTR(mut_s.buf, mutable_buffer); // Use mut_s.buf explicitly
-    TEST_ASSERT_EQUAL_size_t(20, mu_string_mut_get_len(mut_s));
+    TEST_ASSERT_EQUAL_size_t(20, mu_string_mut_len(mut_s));
 
-    TEST_ASSERT_EQUAL_PTR(NULL, mu_string_get_buf(MU_STRING_INVALID));
-    TEST_ASSERT_EQUAL_size_t(SIZE_MAX, mu_string_get_len(MU_STRING_INVALID));
+    TEST_ASSERT_EQUAL_PTR(NULL, mu_string_buf(MU_STRING_INVALID));
+    TEST_ASSERT_EQUAL_size_t(SIZE_MAX, mu_string_len(MU_STRING_INVALID));
 }
 
 
@@ -713,7 +713,7 @@ void test_mu_string_split_at_char(void) {
     // s2 = "no delimiter here", delimiter = '='
     // Expected: return MU_STRING_NOT_FOUND, *after = MU_STRING_NOT_FOUND
     return_value = mu_string_split_at_char(s2, &after_result, '=');
-    TEST_ASSERT_TRUE(mu_string_eq(MU_STRING_NOT_FOUND, return_value));
+    TEST_ASSERT_TRUE(mu_string_eq(s2, return_value));
     TEST_ASSERT_TRUE(mu_string_eq(MU_STRING_NOT_FOUND, after_result));
 
     // Test 3: Delimiter at start
@@ -754,7 +754,7 @@ void test_mu_string_split_at_char(void) {
      // s2 = "no delimiter here", delimiter = '='
      // Expected: return MU_STRING_NOT_FOUND
      return_value = mu_string_split_at_char(s2, NULL, '=');
-     TEST_ASSERT_TRUE(mu_string_eq(MU_STRING_NOT_FOUND, return_value));
+     TEST_ASSERT_TRUE(mu_string_eq(s2, return_value));
 
     // Test 9: Invalid input string s
     // s = MU_STRING_INVALID, delimiter = '='
@@ -774,7 +774,7 @@ void test_mu_string_split_at_char(void) {
     // Expected: return MU_STRING_NOT_FOUND, *after = MU_STRING_NOT_FOUND
     mu_string_t s_len1 = MU_STR_LITERAL("a");
     return_value = mu_string_split_at_char(s_len1, &after_result, '=');
-    TEST_ASSERT_TRUE(mu_string_eq(MU_STRING_NOT_FOUND, return_value));
+    TEST_ASSERT_TRUE(mu_string_eq(s_len1, return_value));
     TEST_ASSERT_TRUE(mu_string_eq(MU_STRING_NOT_FOUND, after_result));
 
      // Test 12: Delimiter is the only character
@@ -805,9 +805,9 @@ void test_mu_string_split_by_pred(void) {
 
     // Test 2: Predicate never matches
     // s2 = "abcdef", pred = is_digit_pred
-    // Expected: return MU_STRING_NOT_FOUND, *after = MU_STRING_NOT_FOUND
+    // Expected: return s2, *after = MU_STRING_NOT_FOUND
     return_value = mu_string_split_by_pred(s2, &after_result, is_digit_pred, NULL);
-    TEST_ASSERT_TRUE(mu_string_eq(MU_STRING_NOT_FOUND, return_value));
+    TEST_ASSERT_TRUE(mu_string_eq(s2, return_value));
     TEST_ASSERT_TRUE(mu_string_eq(MU_STRING_NOT_FOUND, after_result));
 
 
@@ -840,9 +840,9 @@ void test_mu_string_split_by_pred(void) {
 
      // Test 7: Predicate never matches with NULL after pointer
      // s2 = "abcdef", pred = is_digit_pred
-     // Expected: return MU_STRING_NOT_FOUND
+     // Expected: return s2
      return_value = mu_string_split_by_pred(s2, NULL, is_digit_pred, NULL);
-     TEST_ASSERT_TRUE(mu_string_eq(MU_STRING_NOT_FOUND, return_value));
+     TEST_ASSERT_TRUE(mu_string_eq(s2, return_value));
 
      // Test 8: Invalid input string s
      // s = MU_STRING_INVALID, pred = is_digit_pred
@@ -885,9 +885,9 @@ void test_mu_string_split_by_not_pred(void) {
 
     // Test 2: Predicate always matches (not found)
     // s2 = "123456", pred = is_digit_pred
-    // Expected: return MU_STRING_NOT_FOUND, *after = MU_STRING_NOT_FOUND
+    // Expected: return s2, *after = MU_STRING_NOT_FOUND
     return_value = mu_string_split_by_not_pred(s2, &after_result, is_digit_pred, NULL);
-    TEST_ASSERT_TRUE(mu_string_eq(MU_STRING_NOT_FOUND, return_value));
+    TEST_ASSERT_TRUE(mu_string_eq(s2, return_value));
     TEST_ASSERT_TRUE(mu_string_eq(MU_STRING_NOT_FOUND, after_result));
 
      // Test 3: Predicate does NOT match at start
@@ -919,9 +919,9 @@ void test_mu_string_split_by_not_pred(void) {
 
      // Test 7: Predicate always matches with NULL after pointer
      // s2 = "123456", pred = is_digit_pred
-     // Expected: return MU_STRING_NOT_FOUND
+     // Expected: return s2
      return_value = mu_string_split_by_not_pred(s2, NULL, is_digit_pred, NULL);
-     TEST_ASSERT_TRUE(mu_string_eq(MU_STRING_NOT_FOUND, return_value));
+     TEST_ASSERT_TRUE(mu_string_eq(s2, return_value));
 
      // Test 8: Invalid input string s
      // s = MU_STRING_INVALID, pred = is_digit_pred
@@ -1104,7 +1104,7 @@ int main(void) {
     RUN_TEST(test_mu_string_mut_from_buf);
     RUN_TEST(test_mu_string_len);
     RUN_TEST(test_mu_string_is_empty);
-    RUN_TEST(test_mu_string_get_buf_len); // Test getters
+    RUN_TEST(test_mu_string_buf_len); // Test getters
 
     // Comparison
     RUN_TEST(test_mu_string_eq);
